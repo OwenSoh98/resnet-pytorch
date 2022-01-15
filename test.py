@@ -1,4 +1,5 @@
 
+import torch
 from torch import nn
 from torch.nn import functional as F
 from torchsummary import summary
@@ -77,4 +78,9 @@ class ResNet34(nn.Module):
         return self.fc(x)
 
 model = ResNet34()
+model = model.cuda()
 summary(model, (3, 224, 224))
+
+input = torch.rand(1, 3, 244, 244).cuda()
+output = model(input)
+print(output)
