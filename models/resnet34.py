@@ -38,8 +38,8 @@ class Resnet34(nn.Module):
         self.classes = num_class
 
         self.layer0 = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, stride=1, padding=3),
-            nn.BatchNorm2d(num_features=64),
+            nn.Conv2d(3, 64, kernel_size=7, stride=1, padding=3),
+            nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         )
