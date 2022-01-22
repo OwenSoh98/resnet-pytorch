@@ -89,9 +89,9 @@ class Resnet34(nn.Module):
         x = self.fc(x)
         return x
 
-model_size = 224
-num_class = 10
-model = Resnet34(model_size, num_class).cuda()
+# model_size = 224
+# num_class = 10
+# model = Resnet34(model_size, num_class).cuda()
 # input = torch.rand(4, 3, 224, 224).cuda()
 # output = model(input)
-summary(model, (3, 224, 224))
+# summary(model, (3, 224, 224))

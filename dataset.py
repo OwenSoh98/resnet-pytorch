@@ -21,7 +21,7 @@ class Classification_Dataset():
     
 
     def get_dataloader(self, dataset_path):
-        dataset = datasets.ImageFolder(dataset_path, transforms)
+        dataset = datasets.ImageFolder(dataset_path, self.transforms())
         return torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle)
     
     
@@ -31,6 +31,11 @@ class Classification_Dataset():
         return torch.utils.data.random_split(self.train_dataset, [train_size, test_size])
 
 
-cifar10 = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/test', 32, False)
-train, val = cifar10.split_train(0.8)
-print(len(train)*32)
+    def get_dataset(self, train_ratio):
+        # train, val = self.split_train(train_ratio)
+        # return train, val, self.test_dataset
+        return self.train_dataset, self.test_dataset
+
+
+# cifar10 = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/test', batch_size=32, shuffle=False)
+# train, val, test = cifar10.get_dataset(0.8)
