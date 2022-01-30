@@ -12,10 +12,10 @@ class ResidualBlock(nn.Module):
         self.downsample = downsample
         self.conv1x1 = nn.Conv2d(input, output, kernel_size=1, stride=2, bias=False)
         self.left_conv = nn.Sequential(
-            nn.Conv2d(in_channels=input, out_channels=output, kernel_size=3, stride=stride, padding=1),
+            nn.Conv2d(input, output, kernel_size=3, stride=stride, padding=1),
             nn.BatchNorm2d(num_features=output),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=output, out_channels=output, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(output, output, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(num_features=output),
         )
 
@@ -31,24 +31,22 @@ class ResidualBlock(nn.Module):
         return F.relu(x_left)
 
 
-class Resnet34(nn.Module):
-    def __init__(self, input_size, num_class):
-        super(Resnet34, self).__init__()
+class Resnet_Cifar10(nn.Module):
+    def __init__(self, input_size, num_class, n):
+        super(Resnet_Cifar10, self).__init__()
         self.input_size = input_size
         self.classes = num_class
 
         self.layer0 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=7, stride=1, padding=3),
-            nn.BatchNorm2d(64),
+            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(16),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         )
-        self.layer1 = self.make_layer(64, 64, 3, downsample=False)
-        self.layer2 = self.make_layer(64, 128, 4, downsample=True)
-        self.layer3 = self.make_layer(128, 256, 6, downsample=True)
-        self.layer4 = self.make_layer(256, 512, 3, downsample=True)
+        self.layer1 = self.make_layer(16, 16, n, downsample=False)
+        self.layer2 = self.make_layer(16, 32, n, downsample=True)
+        self.layer3 = self.make_layer(32, 64, n, downsample=True)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512, num_class)
+        self.fc = nn.Linear(64, num_class)
 
 
     def make_layer(self, input, output, num_blocks, downsample):
@@ -83,7 +81,6 @@ class Resnet34(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
-        x = self.layer4(x)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)

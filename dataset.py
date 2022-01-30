@@ -5,37 +5,43 @@ import cv2
 import numpy as np
 
 class Classification_Dataset():
-    def __init__(self, train_path, test_path, batch_size, shuffle):
+    def __init__(self, train_path, test_path, batch_size, shuffle, train_ratio):
         self.train_path = train_path
         self.test_path = test_path
         self.batch_size = batch_size
         self.shuffle = shuffle
-        self.train_dataset = self.get_dataloader(train_path)
-        self.test_dataset = self.get_dataloader(test_path)
 
+        self.train_len = 0
+        self.val_len = 0
+        self.test_len = 0
+        self.train_loader, self.val_loader, self.test_loader = self.get_data(train_ratio)
 
     def transforms(self):
+        """ Specify transformations here"""
         return transforms.Compose([
             transforms.ToTensor()
         ])
     
-
-    def get_dataloader(self, dataset_path):
-        dataset = datasets.ImageFolder(dataset_path, self.transforms())
+    def get_dataloader(self, dataset):
+        """ Returns dataloader of dataset"""
         return torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle)
     
     
-    def split_train(self, train_ratio):
-        train_size = int(train_ratio * len(self.train_dataset))
-        test_size = len(self.train_dataset) - train_size
-        return torch.utils.data.random_split(self.train_dataset, [train_size, test_size])
+    def split_trainval(self, train_ratio):
+        """ Split train dataset into train/val dataset """
+        train_dataset = datasets.ImageFolder(self.train_path, self.transforms())
+        self.train_len = int(train_ratio * len(train_dataset))
+        self.val_len = len(train_dataset) - self.train_len
+        return torch.utils.data.random_split(train_dataset, [self.train_len, self.val_len])
 
 
-    def get_dataset(self, train_ratio):
-        # train, val = self.split_train(train_ratio)
-        # return train, val, self.test_dataset
-        return self.train_dataset, self.test_dataset
+    def get_data(self, train_ratio):
+        """ Returns Train, Val, Test dataloaders """
+        train_dataset, val_dataset = self.split_trainval(train_ratio)
+        train_dataloader = self.get_dataloader(train_dataset)
+        val_dataloader = self.get_dataloader(val_dataset)
 
-
-# cifar10 = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/test', batch_size=32, shuffle=False)
-# train, val, test = cifar10.get_dataset(0.8)
+        test_dataset = datasets.ImageFolder(self.test_path, self.transforms())
+        self.test_len = len(test_dataset)
+        test_dataloader = self.get_dataloader(test_dataset)
+        return train_dataloader, val_dataloader, test_dataloader
