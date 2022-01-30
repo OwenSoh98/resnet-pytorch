@@ -83,7 +83,7 @@ class Train_Model():
 
             print('Train Loss: {}, Test Loss {}, Test Accuracy {}'.format(train_loss, test_loss, test_acc))
 
-            row = [i, train_loss, test_loss, test_acc]
+            row = [i+1, train_loss, test_loss, test_acc]
             self.save_csv(csv_file, row)
 
             if test_acc > last_test_acc:

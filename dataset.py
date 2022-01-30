@@ -20,7 +20,8 @@ class Classification_Dataset():
         """ Specify transformations here"""
         return transforms.Compose([
             transforms.Resize([32, 32]),
-            transforms.RandomCrop([24, 24]),
+            # transforms.RandomCrop([24, 24]),
+            transforms.RandomCrop([32, 32], padding=4),
             transforms.RandomRotation(15),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ToTensor()
