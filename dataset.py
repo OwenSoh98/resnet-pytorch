@@ -19,6 +19,17 @@ class Classification_Dataset():
     def transforms(self):
         """ Specify transformations here"""
         return transforms.Compose([
+            transforms.Resize([32, 32]),
+            transforms.RandomCrop([24, 24]),
+            transforms.RandomRotation(15),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.ToTensor()
+        ])
+
+    def ToTensor(self):
+        """ Specify transformations here"""
+        return transforms.Compose([
+            transforms.Resize([32, 32]),
             transforms.ToTensor()
         ])
     
@@ -41,7 +52,7 @@ class Classification_Dataset():
         train_dataloader = self.get_dataloader(train_dataset)
         val_dataloader = self.get_dataloader(val_dataset)
 
-        test_dataset = datasets.ImageFolder(self.test_path, self.transforms())
+        test_dataset = datasets.ImageFolder(self.test_path, self.ToTensor())
         self.test_len = len(test_dataset)
         test_dataloader = self.get_dataloader(test_dataset)
         return train_dataloader, val_dataloader, test_dataloader

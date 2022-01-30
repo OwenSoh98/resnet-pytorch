@@ -16,13 +16,15 @@ class Train_Model():
 
         self.num_class = 10
         self.epochs = epochs
-        self.lr = 1e-4
-        self.weight_decay = 2e-4
+        self.lr = 1e-2
+        self.weight_decay = 1e-4
+        self.momentum = 0.9
 
         self.modelpath = './results/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S") + '/'
         self.model = Resnet_Cifar10(input_size=32, num_class=self.num_class, n=2).to(self.device)
         self.loss_function = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(self.model.parameters(), self.lr, weight_decay=self.weight_decay)
+        self.optimizer = optim.SGD(self.model.parameters(), self.lr, weight_decay=self.weight_decay, momentum=self.momentum)
+        self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[10, 20], gamma=0.1)
         
         self.train()
 
@@ -85,6 +87,7 @@ class Train_Model():
             self.save_csv(csv_file, row)
 
             if test_acc > last_test_acc:
+                last_test_acc = test_acc
                 print('New highest accuracy detected. Checkpoint saved.')
                 self.save()
 
