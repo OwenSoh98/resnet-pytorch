@@ -12,8 +12,7 @@ import csv
 class Train_Model():
     def __init__(self, epochs):
         self.device = torch.device(0 if torch.cuda.is_available() else 'cpu')
-        self.dataset = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/test', batch_size=1024, shuffle=False, train_ratio=1)
-
+        self.dataset = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/val', './CIFAR-10/test', imgsz=32, batch_size=1024, shuffle=True)
         self.num_class = 10
         self.epochs = epochs
         self.lr = 1e-2
@@ -28,13 +27,13 @@ class Train_Model():
         
         self.train()
 
-    def create_model_folder(self, path):
+    def create_directory(self, path):
+        """ Create directory """
         if not os.path.exists(path):
             os.makedirs(path)
 
     def save_csv(self, csv_file, row):
         """ Write to CSV file"""
-
         with open(csv_file, 'a', newline='') as writeFile:
             writer = csv.writer(writeFile)
             writer.writerow(row)
@@ -43,13 +42,11 @@ class Train_Model():
 
     def save_headers(self, csv_file):
         """ Write CSV file header """
-
-        fieldnames = ['epoch', 'train loss', 'test loss', 'test accuracy']
+        fieldnames = ['epoch', 'validation loss', 'validation loss', 'validation accuracy']
         self.save_csv(csv_file, fieldnames)
 
     def train_epoch(self):
         """ Train for 1 epoch """
-
         self.model.train()
         total_loss = 0
 
@@ -68,38 +65,36 @@ class Train_Model():
     
     def train(self):
         """ Train model """
-
-        self.create_model_folder(self.modelpath)
+        self.create_directory(self.modelpath)
         csv_file = os.path.join(self.modelpath, 'training_results.csv')
         self.save_headers(csv_file)
         
-        last_test_acc = 0
+        last_val_acc = 0
         for i in range(self.epochs):
             print('Epoch: {}/{}'.format(i+1, self.epochs))
             train_loss = self.train_epoch()
 
-            test_loss, test_TP = self.eval(self.dataset.test_loader)
-            test_acc = test_TP / self.dataset.test_len
+            val_loss, val_TP = self.eval(self.dataset.val_loader)
+            print(self.dataset.val_len)
+            val_acc = val_TP / self.dataset.val_len
 
-            print('Train Loss: {}, Test Loss {}, Test Accuracy {}'.format(train_loss, test_loss, test_acc))
+            print('Train Loss: {}, Val Loss {}, Val Accuracy {}'.format(train_loss, val_loss, val_acc))
 
-            row = [i+1, train_loss, test_loss, test_acc]
+            row = [i+1, train_loss, val_loss, val_acc]
             self.save_csv(csv_file, row)
 
-            if test_acc > last_test_acc:
-                last_test_acc = test_acc
+            if val_acc > last_val_acc:
+                last_test_acc = val_acc
                 print('New highest accuracy detected. Checkpoint saved.')
                 self.save()
 
     def save(self):
         """ Save model """
-
         PATH = os.path.join(self.modelpath, 'model.pt')
         torch.save(self.model.state_dict(), PATH)
 
     def eval(self, loader):
         """ Evaluate the loss and TP """
-    
         self.model.eval()
         total_loss = 0
         TP = 0

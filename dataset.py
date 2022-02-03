@@ -5,55 +5,48 @@ import cv2
 import numpy as np
 
 class Classification_Dataset():
-    def __init__(self, train_path, test_path, batch_size, shuffle, train_ratio):
+    def __init__(self, train_path, val_path, test_path, imgsz, batch_size, shuffle):
         self.train_path = train_path
+        self.val_path = val_path
         self.test_path = test_path
+
+        self.imgsz = imgsz
         self.batch_size = batch_size
         self.shuffle = shuffle
 
         self.train_len = 0
         self.val_len = 0
         self.test_len = 0
-        self.train_loader, self.val_loader, self.test_loader = self.get_data(train_ratio)
 
-    def transforms(self):
-        """ Specify transformations here"""
+        self.train_loader, self.val_loader, self.test_loader = self.get_data()
+
+    def train_transform(self):
+        """ Specify train transformations here"""
         return transforms.Compose([
-            transforms.Resize([32, 32]),
-            # transforms.RandomCrop([24, 24]),
+            transforms.Resize([self.imgsz, self.imgsz]),
             transforms.RandomCrop([32, 32], padding=4),
             transforms.RandomRotation(15),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ToTensor()
         ])
 
-    def ToTensor(self):
-        """ Specify transformations here"""
+    def testval_transform(self):
+        """ Specify test/val transformations here"""
         return transforms.Compose([
-            transforms.Resize([32, 32]),
+            transforms.Resize([self.imgsz, self.imgsz]),
             transforms.ToTensor()
         ])
     
-    def get_dataloader(self, dataset):
+    def get_dataloader(self, path, transform):
         """ Returns dataloader of dataset"""
-        return torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle)
-    
-    
-    def split_trainval(self, train_ratio):
-        """ Split train dataset into train/val dataset """
-        train_dataset = datasets.ImageFolder(self.train_path, self.transforms())
-        self.train_len = int(train_ratio * len(train_dataset))
-        self.val_len = len(train_dataset) - self.train_len
-        return torch.utils.data.random_split(train_dataset, [self.train_len, self.val_len])
+        dataset = datasets.ImageFolder(path, transform)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle)
+        return dataloader, len(dataset)
 
-
-    def get_data(self, train_ratio):
+    def get_data(self):
         """ Returns Train, Val, Test dataloaders """
-        train_dataset, val_dataset = self.split_trainval(train_ratio)
-        train_dataloader = self.get_dataloader(train_dataset)
-        val_dataloader = self.get_dataloader(val_dataset)
+        train_dataloader, self.train_len = self.get_dataloader(self.train_path, transform=self.train_transform())
+        val_dataloader, self.val_len = self.get_dataloader(self.val_path, transform=self.testval_transform())
+        test_dataloader, self.test_len = self.get_dataloader(self.test_path, transform=self.testval_transform())
 
-        test_dataset = datasets.ImageFolder(self.test_path, self.ToTensor())
-        self.test_len = len(test_dataset)
-        test_dataloader = self.get_dataloader(test_dataset)
         return train_dataloader, val_dataloader, test_dataloader
