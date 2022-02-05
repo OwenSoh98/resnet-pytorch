@@ -3,12 +3,14 @@ import torch
 from torchvision import datasets, transforms
 import cv2
 import numpy as np
+import pandas as pd
 
 class Classification_Dataset():
-    def __init__(self, train_path, val_path, test_path, imgsz, batch_size, shuffle):
+    def __init__(self, train_path, val_path, test_path, mean_std_path, imgsz, batch_size, shuffle):
         self.train_path = train_path
         self.val_path = val_path
         self.test_path = test_path
+        self.mean, self.std = self.parse_data(mean_std_path, ['mean', 'std'])
 
         self.imgsz = imgsz
         self.batch_size = batch_size
@@ -27,15 +29,23 @@ class Classification_Dataset():
             transforms.RandomCrop([32, 32], padding=4),
             transforms.RandomRotation(15),
             transforms.RandomHorizontalFlip(p=0.5),
-            transforms.ToTensor()
+            transforms.ToTensor(),
+            transforms.Normalize(mean=self.mean, std=self.std)
         ])
 
     def testval_transform(self):
         """ Specify test/val transformations here"""
         return transforms.Compose([
             transforms.Resize([self.imgsz, self.imgsz]),
-            transforms.ToTensor()
+            transforms.ToTensor(),
+            transforms.Normalize(mean=self.mean, std=self.std)
         ])
+
+    def parse_data(self, file, columns):
+        """ Parse csv file """
+        csv_file = pd.read_csv(file)
+        data = pd.DataFrame(csv_file, columns=columns).to_numpy()
+        return data[:,0], data[:,1]
     
     def get_dataloader(self, path, transform):
         """ Returns dataloader of dataset"""

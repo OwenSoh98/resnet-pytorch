@@ -10,11 +10,11 @@ import os
 import csv
 
 class Train_Model():
-    def __init__(self, epochs):
+    def __init__(self):
         self.device = torch.device(0 if torch.cuda.is_available() else 'cpu')
-        self.dataset = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/val', './CIFAR-10/test', imgsz=32, batch_size=1024, shuffle=True)
+        self.dataset = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/val', './CIFAR-10/test', 'cifar10_mean_std.csv', imgsz=32, batch_size=1024, shuffle=True)
         self.num_class = 10
-        self.epochs = epochs
+        self.epochs = 150
         self.lr = 1e-2
         self.weight_decay = 1e-4
         self.momentum = 0.9
@@ -23,7 +23,7 @@ class Train_Model():
         self.model = Resnet_Cifar10(input_size=32, num_class=self.num_class, n=2).to(self.device)
         self.loss_function = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.model.parameters(), self.lr, weight_decay=self.weight_decay, momentum=self.momentum)
-        self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[10, 20], gamma=0.1)
+        self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[50, 100], gamma=0.1)
         
         self.train()
 
@@ -51,6 +51,7 @@ class Train_Model():
         total_loss = 0
 
         for idx, (x, y) in enumerate(self.dataset.train_loader):
+            # print(x)
             y_pred = self.model(x.to(self.device))
             y = y.to(self.device)
             loss = self.loss_function(y_pred, y)
@@ -75,7 +76,6 @@ class Train_Model():
             train_loss = self.train_epoch()
 
             val_loss, val_TP = self.eval(self.dataset.val_loader)
-            print(self.dataset.val_len)
             val_acc = val_TP / self.dataset.val_len
 
             print('Train Loss: {}, Val Loss {}, Val Accuracy {}'.format(train_loss, val_loss, val_acc))
@@ -84,7 +84,7 @@ class Train_Model():
             self.save_csv(csv_file, row)
 
             if val_acc > last_val_acc:
-                last_test_acc = val_acc
+                last_val_acc = val_acc
                 print('New highest accuracy detected. Checkpoint saved.')
                 self.save()
 
@@ -111,4 +111,4 @@ class Train_Model():
         return total_loss / self.dataset.test_len, TP
 
 
-Train_Model(epochs=30)
+Train_Model()
