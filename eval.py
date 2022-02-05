@@ -9,7 +9,7 @@ class Eval_Model():
         self.dataset = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/val', './CIFAR-10/test', 'cifar10_mean_std.csv', imgsz=32, batch_size=1024, shuffle=True)
         self.num_class = 10
         # self.model_path = './results/30-01-2022-22-13-04/model.pt'
-        self.model_path = './results/05-02-2022-16-48-54/model.pt'
+        self.model_path = './results/05-02-2022-21-33-18/model.pt'
         self.model = Resnet_Cifar10(input_size=32, num_class=self.num_class, n=2).to(self.device)
 
         self.load_model()

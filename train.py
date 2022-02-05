@@ -8,23 +8,26 @@ from models.resnet18cifar10 import *
 from datetime import datetime
 import os
 import csv
+import math
 
 class Train_Model():
     def __init__(self):
+        self.batch_size = 1024
         self.device = torch.device(0 if torch.cuda.is_available() else 'cpu')
-        self.dataset = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/val', './CIFAR-10/test', 'cifar10_mean_std.csv', imgsz=32, batch_size=1024, shuffle=True)
+        self.dataset = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/val', './CIFAR-10/test', 'cifar10_mean_std.csv', imgsz=32, batch_size=self.batch_size, shuffle=True)
         self.num_class = 10
-        self.epochs = 150
-        self.lr = 1e-2
-        self.weight_decay = 1e-4
+        self.epochs = 50
+        self.lr = 0.01
+        self.weight_decay = 0.0005
         self.momentum = 0.9
 
         self.modelpath = './results/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S") + '/'
         self.model = Resnet_Cifar10(input_size=32, num_class=self.num_class, n=2).to(self.device)
         self.loss_function = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.model.parameters(), self.lr, weight_decay=self.weight_decay, momentum=self.momentum)
-        self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[50, 100], gamma=0.1)
-        
+        # self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20, 40], gamma=0.1)
+        # self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.1, epochs=40, steps_per_epoch=(self.dataset.train_len // self.batch_size))
+        self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.05, total_steps=40*len(self.dataset.train_loader), anneal_strategy="linear")
         self.train()
 
     def create_directory(self, path):
@@ -45,13 +48,13 @@ class Train_Model():
         fieldnames = ['epoch', 'validation loss', 'validation loss', 'validation accuracy']
         self.save_csv(csv_file, fieldnames)
 
-    def train_epoch(self):
+    def train_epoch(self, loader):
         """ Train for 1 epoch """
         self.model.train()
         total_loss = 0
+        print(self.scheduler.get_last_lr())
 
-        for idx, (x, y) in enumerate(self.dataset.train_loader):
-            # print(x)
+        for idx, (x, y) in enumerate(loader):
             y_pred = self.model(x.to(self.device))
             y = y.to(self.device)
             loss = self.loss_function(y_pred, y)
@@ -59,10 +62,11 @@ class Train_Model():
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+            self.scheduler.step()
 
             total_loss += loss.cpu().detach().numpy()
 
-        return total_loss / self.dataset.train_len
+        return total_loss / len(loader)
     
     def train(self):
         """ Train model """
@@ -73,7 +77,7 @@ class Train_Model():
         last_val_acc = 0
         for i in range(self.epochs):
             print('Epoch: {}/{}'.format(i+1, self.epochs))
-            train_loss = self.train_epoch()
+            train_loss = self.train_epoch(self.dataset.train_loader)
 
             val_loss, val_TP = self.eval(self.dataset.val_loader)
             val_acc = val_TP / self.dataset.val_len
@@ -108,7 +112,7 @@ class Train_Model():
             y_pred = torch.argmax(y_pred, dim=1)
             TP += ((y == y_pred).int().sum()).cpu().detach().numpy()
 
-        return total_loss / self.dataset.test_len, TP
+        return total_loss / len(loader), TP
 
 
 Train_Model()
