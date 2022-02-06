@@ -11,9 +11,9 @@ import csv
 
 class Train_Model():
     def __init__(self):
-        self.epochs = 30
-        self.batch_size = 256
-        self.lr = 0.05
+        self.epochs = 50
+        self.batch_size = 128
+        self.lr = 0.01
         self.weight_decay = 0.0005
         self.momentum = 0.9
         self.num_class = 10
@@ -26,10 +26,10 @@ class Train_Model():
         self.loss_function = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.model.parameters(), self.lr, weight_decay=self.weight_decay, momentum=self.momentum)
         # self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20, 40], gamma=0.1)
-        self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.1, epochs=self.epochs, steps_per_epoch=len(self.dataset.train_loader), pct_start=0.3, 
-                            anneal_strategy="cos", div_factor=0.1/self.lr)
-        # self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.1, epochs=self.epochs, steps_per_epoch=len(self.dataset.train_loader), pct_start=0.4, 
-        #                     anneal_strategy="linear", div_factor=0.1/self.lr, final_div_factor=self.lr/0.005, three_phase=True)
+        # self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.1, epochs=self.epochs, steps_per_epoch=len(self.dataset.train_loader), pct_start=0.5, 
+        #                     anneal_strategy="linear", div_factor=0.1/self.lr)
+        self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.05, epochs=self.epochs, steps_per_epoch=len(self.dataset.train_loader), pct_start=0.4, 
+                            anneal_strategy="linear", div_factor=0.05/self.lr, final_div_factor=self.lr/0.0005, three_phase=True)
         self.train()
 
     def create_directory(self, path):

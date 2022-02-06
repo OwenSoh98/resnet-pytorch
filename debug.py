@@ -16,8 +16,8 @@ class Train_Model():
         self.device = torch.device(0 if torch.cuda.is_available() else 'cpu')
         self.dataset = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/val', './CIFAR-10/test', 'cifar10_mean_std.csv', imgsz=32, batch_size=self.batch_size, shuffle=True)
         self.num_class = 10
-        self.epochs = 30
-        self.lr = 0.05
+        self.epochs = 50
+        self.lr = 0.01
         self.weight_decay = 0.0005
         self.momentum = 0.9
 
@@ -26,10 +26,10 @@ class Train_Model():
         self.loss_function = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.model.parameters(), self.lr, weight_decay=self.weight_decay, momentum=self.momentum)
         # self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20*len(self.dataset.train_loader), 40*len(self.dataset.train_loader)], gamma=0.1)
-        self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.1, epochs=self.epochs, steps_per_epoch=len(self.dataset.train_loader), pct_start=0.3, 
-                            anneal_strategy="cos", div_factor=0.1/self.lr)
-        # self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.1, epochs=self.epochs, steps_per_epoch=len(self.dataset.train_loader), pct_start=0.4, 
-        #                     anneal_strategy="linear", div_factor=0.1/self.lr, final_div_factor=self.lr/0.005, three_phase=True)
+        # self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.1, epochs=self.epochs, steps_per_epoch=len(self.dataset.train_loader), pct_start=0.3, 
+        #                     anneal_strategy="cos", div_factor=0.1/self.lr)
+        self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.05, epochs=self.epochs, steps_per_epoch=len(self.dataset.train_loader), pct_start=0.4, 
+                            anneal_strategy="linear", div_factor=0.05/self.lr, final_div_factor=self.lr/0.0005, three_phase=True)
         # self.scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=50)
         self.train()
 
