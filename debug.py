@@ -1,47 +1,57 @@
-import enum
-import torch
-from torchvision import datasets, transforms
-import cv2
 import numpy as np
+from torch import nn
+from torch import optim
+import torch.nn.functional as F
+from dataset import *
+from models.resnet34 import *
+from models.resnet18cifar10 import *
+from datetime import datetime
+import os
+import csv
 import matplotlib.pyplot as plt
 
-transforms = transforms.Compose([
-    transforms.ToTensor()
-])
+class Train_Model():
+    def __init__(self):
+        self.batch_size = 1024
+        self.device = torch.device(0 if torch.cuda.is_available() else 'cpu')
+        self.dataset = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/val', './CIFAR-10/test', 'cifar10_mean_std.csv', imgsz=32, batch_size=self.batch_size, shuffle=True)
+        self.num_class = 10
+        self.epochs = 50
+        self.lr = 0.01
+        self.weight_decay = 0.0005
+        self.momentum = 0.9
 
-train_dataset = datasets.ImageFolder('./CIFAR-10/train', transforms)
-test_dataset = datasets.ImageFolder('./CIFAR-10/test', transforms)
+        self.modelpath = './results/' + datetime.now().strftime("%d-%m-%Y-%H-%M-%S") + '/'
+        self.model = Resnet_Cifar10(input_size=32, num_class=self.num_class, n=2).to(self.device)
+        self.loss_function = nn.CrossEntropyLoss()
+        self.optimizer = optim.SGD(self.model.parameters(), self.lr, weight_decay=self.weight_decay, momentum=self.momentum)
+        # self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20*len(self.dataset.train_loader), 40*len(self.dataset.train_loader)], gamma=0.1)
+        # self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.1, epochs=40, steps_per_epoch=(self.dataset.train_len // self.batch_size))
+        self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.05, epochs=self.epochs, steps_per_epoch=len(self.dataset.train_loader), pct_start=0.4, 
+                            anneal_strategy="linear", div_factor=0.05/self.lr, final_div_factor=self.lr/0.0005, three_phase=True)
+        self.train()
 
-trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=False)
+    def train_epoch(self, loader):
+        """ Train for 1 epoch """
+        self.model.train()
+        lr = self.scheduler.get_last_lr()
 
-for idx, (x, y) in enumerate(trainloader):
-    print(idx)
+        for idx in range(len(self.dataset.train_loader)):
+            self.optimizer.step()
+            self.scheduler.step()
 
-# for i in range(1):
-#     i = 4
-#     img = np.array(image_batch[i,:,:,:])
-#     img = np.reshape(img, (32, 32, 3))
-#     img = np.moveaxis(image_batch[i].numpy(), 0, 2)
-#     img = img
-#     print(img)
-#     cv2.imshow('img', img)
-#     cv2.waitKey(0)
-#     plt.imshow(img)
-#     plt.title(labels[i])
-# plt.show()
-# for i in range(1):
-#     img = image_batch[i].numpy()
-#     print(img.shape)
-#     img = np.moveaxis(image_batch[i].numpy(), 0, 2)
-#     print('-------------------------------------------------')
-#     print(img.shape)
-#     # plt.subplot(2, 4, i+1)
-#     plt.imshow(img)
-#     plt.title(labels[i])
+        return lr[0]
+    def train(self):
+        """ Train model """
+        lrs = []
 
-# img = cv2.imread('./CIFAR-10/train/airplane/0000.jpg')
-# print(img)
-# # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-# cv2.imshow('img', img)
-# cv2.waitKey(0)
-# plt.show()
+        for i in range(self.epochs):
+            lrs.append(self.train_epoch(self.dataset.train_loader))
+        
+        epochs = range(1, self.epochs+1)
+        print(lrs)
+        plt.plot(epochs, lrs)
+        plt.show()
+
+
+Train_Model()

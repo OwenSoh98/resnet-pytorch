@@ -8,7 +8,6 @@ from models.resnet18cifar10 import *
 from datetime import datetime
 import os
 import csv
-import math
 
 class Train_Model():
     def __init__(self):
@@ -27,7 +26,8 @@ class Train_Model():
         self.optimizer = optim.SGD(self.model.parameters(), self.lr, weight_decay=self.weight_decay, momentum=self.momentum)
         # self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20, 40], gamma=0.1)
         # self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.1, epochs=40, steps_per_epoch=(self.dataset.train_len // self.batch_size))
-        self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.05, total_steps=40*len(self.dataset.train_loader), anneal_strategy="linear")
+        self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=0.05, epochs=self.epochs, steps_per_epoch=len(self.dataset.train_loader), pct_start=0.4, 
+                            anneal_strategy="linear", div_factor=0.05/self.lr, final_div_factor=self.lr/0.0005, three_phase=True)
         self.train()
 
     def create_directory(self, path):

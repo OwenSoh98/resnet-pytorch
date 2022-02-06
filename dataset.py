@@ -27,7 +27,7 @@ class Classification_Dataset():
         return transforms.Compose([
             transforms.Resize([self.imgsz, self.imgsz]),
             transforms.RandomCrop([32, 32], padding=4),
-            transforms.RandomRotation(15),
+            # transforms.RandomRotation(15),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ToTensor(),
             transforms.Normalize(mean=self.mean, std=self.std)
