@@ -1,6 +1,6 @@
 import torch
 from dataset import *
-from models.resnet34 import *
+from models.resnet import *
 from models.resnet18cifar10 import *
 
 class Eval_Model():
@@ -8,16 +8,16 @@ class Eval_Model():
         self.device = torch.device(0 if torch.cuda.is_available() else 'cpu')
         self.dataset = Classification_Dataset('./CIFAR-10/train', './CIFAR-10/val', './CIFAR-10/test', 'cifar10_mean_std.csv', imgsz=32, batch_size=1024, shuffle=True)
         self.num_class = 10
-        # self.model_path = './results/30-01-2022-22-13-04/model.pt'
-        self.model_path = './results/06-02-2022-14-24-27/model.pt'
-        self.model = Resnet_Cifar10(input_size=32, num_class=self.num_class, n=2).to(self.device)
+        self.model_path = './results/22-02-2022-18-28-03/best.pt'
+        self.model = ResNet18(input_size=32, num_class=self.num_class).to(self.device)
 
         self.load_model()
         self.eval_test()
     
     def load_model(self):
         """ Load model """
-        self.model.load_state_dict(torch.load(self.model_path))
+        checkpoint = torch.load(self.model_path)
+        self.model.load_state_dict(checkpoint['model'])
     
     def eval(self, loader):
         """ Evaluate the loss and TP """
